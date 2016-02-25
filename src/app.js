@@ -3,6 +3,8 @@ var myTisseoAPIKey = '039b8682-0e96-48d6-914d-17e9148bd026';
 var UI = require('ui');
 var ajax = require('ajax');
 
+var loc = require('localisation');
+
 var Vector2 = require('vector2');
 
 //var Accel = require('ui/accel');
@@ -17,21 +19,6 @@ var locationOptions = {
   timeout: 10000
 };
 
-var rad = function(x) {
-  return x * Math.PI / 180;
-};
-
-var getDistance = function(lonA,latA,lonB,latB) {
-  var R = 6378137; // Earth’s mean radius in meter
-  var dLat = rad(latB - latA);
-  var dLong = rad(lonB - lonA);
-  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(rad(latA)) * Math.cos(rad(latB)) *
-    Math.sin(dLong / 2) * Math.sin(dLong / 2);
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  var d = R * c;
-  return d; // returns the distance in meter
-};
 
 function locationSuccess(pos) {
 	// Text element to inform user
@@ -51,12 +38,12 @@ function locationSuccess(pos) {
 	splashWindow.show();	
 
   console.log('lat= ' + pos.coords.latitude + ' lon= ' + pos.coords.longitude);
-	console.log('Dist AO = '+ getDistance(1.443578,43.597081,pos.coords.longitude,pos.coords.latitude)+' m');
-	console.log('Dist OB = ' + getDistance(pos.coords.longitude,pos.coords.latitude,1.445874,43.600546)+' m');
+	console.log('Dist AO = '+ loc.getDistance(1.443578,43.597081,pos.coords.longitude,pos.coords.latitude)+' m');
+	console.log('Dist OB = ' + loc.getDistance(pos.coords.longitude,pos.coords.latitude,1.445874,43.600546)+' m');
 	var dX = 0.002;
 	var dY = dX;
-	console.log('Dist A1O = '+ getDistance(pos.coords.longitude-dX,pos.coords.latitude-dY,pos.coords.longitude,pos.coords.latitude)+' m');
-	console.log('Dist OB1 = ' + getDistance(pos.coords.longitude,pos.coords.latitude,pos.coords.longitude+dX,pos.coords.latitude+dY)+' m');
+	console.log('Dist A1O = '+ loc.getDistance(pos.coords.longitude-dX,pos.coords.latitude-dY,pos.coords.longitude,pos.coords.latitude)+' m');
+	console.log('Dist OB1 = ' + loc.getDistance(pos.coords.longitude,pos.coords.latitude,pos.coords.longitude+dX,pos.coords.latitude+dY)+' m');
 
 	// Make request to Tisseo
 	ajax(
@@ -75,7 +62,7 @@ function locationSuccess(pos) {
 					var title = data.stopAreas.stopArea[i].name;
 					title = title.charAt(0).toUpperCase() + title.substring(1);
 					// Get date/time substring
-					var distance =  Math.round(getDistance(pos.coords.longitude,pos.coords.latitude,data.stopAreas.stopArea[i].x,data.stopAreas.stopArea[i].y))+' m';
+					var distance =  Math.round(loc.getDistance(pos.coords.longitude,pos.coords.latitude,data.stopAreas.stopArea[i].x,data.stopAreas.stopArea[i].y))+' m';
 					// Add to menu items array
 					items.push({
 					title:title,
@@ -123,7 +110,7 @@ function locationSuccess(pos) {
 								
 								var time = json.departures.departure[i].dateTime;
 								var disptime = time.substring(11,16);
-								
+								var mydate = time.substring(0,10);
 								// Get date/time substring
 								var subdest1 = json.departures.departure[i].line.shortName;
 								var subdest2 = json.departures.departure[i].destination[0].name;
@@ -132,7 +119,8 @@ function locationSuccess(pos) {
 								// Add to menu items array
 								items.push({
 								title:disptime,
-								subtitle:dest
+								subtitle:dest,
+								date:mydate
 							});
 						}
 					
@@ -160,7 +148,7 @@ function locationSuccess(pos) {
 					//subResultsMenu.items(0, subMenuItems);
 					var subResultsMenu = new UI.Menu({
 						sections: [{
-							title: 'Horaires',
+							title: 'Horaires du ' + menuItemsHoraires[0].date,
 							items: menuItemsHoraires
 						}]
 					});
@@ -172,43 +160,32 @@ function locationSuccess(pos) {
 					//	return items;
 			},
 				function(error) {
-					console.log('Detail Download failed : ' + error);
+					
+					console.log('Detail Download failed 2: ' + error);
 				}
-			);
-/* 
-			
-			
-			
-			var forecast = data.list[e.itemIndex];
-
-			// Assemble body string
-			var content = data.list[e.itemIndex].weather[0].description;
-
-			// Capitalize first letter
-			content = content.charAt(0).toUpperCase() + content.substring(1);
-	
-			// Add temperature, pressure etc
-			content += '\nTemperature: ' + forecast.main.temp + '°C' +
-				'\nPressure: ' + Math.round(forecast.main.pressure) + ' mbar' +
-				'\nWind: ' + Math.round(forecast.wind.speed) + ' mph, '	+ 
-				Math.round(forecast.wind.deg) + '°';
-			
-			// Create the Card for detailed view
-			var detailCard = new UI.Card({
-			title:'Details',
-			subtitle:e.item.subtitle,
-				body: content
-			});
-			detailCard.show(); */
-			
+			);		
 		});
 		
 		// Show the Menu, hide the splash
 		resultsMenu.show();
 		splashWindow.hide();
+			
+							
+		var splashScreen = new UI.Card({ banner: 'images/splash.png' });
+				splashScreen.show();
+
+					//var mainScreen = new UI.Menu();
+
+				setTimeout(function() {
+  				// Display the mainScreen
+  				resultsMenu.show();
+  				// Hide the splashScreen to avoid showing it when the user press Back.
+  				splashScreen.hide();
+				}, 400);
 	},
 	    function(error) {
-			console.log('Main Download failed: ' + error);
+				
+				console.log('Main Download failed: ' + error);
 		}
 	);
 }
@@ -230,7 +207,7 @@ function locationError(err) {
 	splashWindow.add(text2);
 	splashWindow.show();	
 	console.log('location error (' + err.code + '): ' + err.message);
-	console.log('Dist AB = ' + getDistance(1.443578,43.597081,1.445874,43.600546)+' m');
+	console.log('Dist AB = ' + loc.getDistance(1.443578,43.597081,1.445874,43.600546)+' m');
 	//var lat= 43.599548726668566;
 	//var lon= 1.445160303456474;
 }

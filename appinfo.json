@@ -29,6 +29,11 @@
                 "type": "font"
             },
             {
+                "file": "images/splash.png",
+                "name": "IMAGES_SPLASH_PNG",
+                "type": "bitmap"
+            },
+            {
                 "file": "images/Menu_Pic",
                 "menuIcon": true,
                 "name": "IMAGES_MENU_PIC",
@@ -44,7 +49,7 @@
     ],
     "uuid": "178d8ac2-e12d-4ec1-a4b8-9af984697f98",
     "versionCode": 1,
-    "versionLabel": "0.1",
+    "versionLabel": "0.2",
     "watchapp": {
         "hiddenApp": false,
         "watchface": false
